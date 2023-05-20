@@ -2,16 +2,16 @@ import pathlib
 
 import aws_cdk as cdk
 from aws_cdk import BundlingOptions, DockerImage
+from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as lambda_
 
 app = cdk.App()
 stack = cdk.Stack(app, "lambda-curl-test-stack")
 
-# LambdaLayer
+# cURL用のレイヤーを作成する
 layer = lambda_.LayerVersion(
     stack,
     "layer",
-    layer_version_name="arm64_curl_test_layer",
     description="Layer to execute cURL commands",
     code=lambda_.Code.from_asset(
         str(pathlib.Path(__file__).resolve().parent.joinpath(".layer")),
@@ -48,7 +48,7 @@ layer = lambda_.LayerVersion(
 )
 
 # Function
-lambda_.Function(
+func = lambda_.Function(
     stack,
     "function",
     description="Test with cURL command",
@@ -56,9 +56,15 @@ lambda_.Function(
         str(pathlib.Path(__file__).resolve().parent.joinpath("runtime")),
     ),
     runtime=lambda_.Runtime.PYTHON_3_9,
-    architecture=lambda_.Architecture.ARM_64,  # x86_64では動かない
+    architecture=lambda_.Architecture.ARM_64,
     handler="index.handler",
     layers=[layer],
+)
+
+
+# 基本用途がVPCの中に入れて動作確認を想定してるので、VPCに入れられるようにしておく
+func.role.add_managed_policy(
+    iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaVPCAccessExecutionRole")
 )
 
 app.synth()

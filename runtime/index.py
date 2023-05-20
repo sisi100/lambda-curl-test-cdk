@@ -3,7 +3,7 @@ import subprocess
 
 def handler(event, context):
     cmd = subprocess.run(
-        "curl https://www.google.com/",
+        "curl https://blog.i-tale.jp/",
         shell=True,
         capture_output=True,
         text=True,
